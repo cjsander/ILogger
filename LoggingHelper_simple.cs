@@ -60,3 +60,18 @@ public class MyService
         }
     }
 }
+
+//for void methods:
+_logger.ExecuteLogged(() =>
+{
+    // Your method logic
+    if (DateTime.Now.Second % 2 == 0)
+        throw new InvalidOperationException("Test error!");
+});
+
+//for return methods:
+var result = _logger.ExecuteLogged(() =>
+{
+    // Logic here...
+    return "Hello";
+});
