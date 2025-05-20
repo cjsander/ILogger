@@ -1,41 +1,46 @@
-using Serilog;
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 
-public static class AppLogger
+namespace logging
 {
-    public static void Info(string message, [CallerMemberName] string memberName = "")
+    public static class AppLogger
     {
-        Log.Information("[{Method}] {Message}", memberName, message);
-    }
+        private static readonly object _lock = new();
+        private static string _logFilePath = "app.txt";
 
-    public static void Debug(string message, [CallerMemberName] string memberName = "")
-    {
-        Log.Debug("[{Method}] {Message}", memberName, message);
-    }
+        public static void SetLogFilePath(string path)
+        {
+            _logFilePath = path;
+        }
 
-    public static void Warning(string message, [CallerMemberName] string memberName = "")
-    {
-        Log.Warning("[{Method}] {Message}", memberName, message);
-    }
+        public static void LogInfo(string message,
+            [CallerMemberName] string memberName = "") =>
+            WriteLog("INFO", message, memberName);
 
-    public static void Error(string message, [CallerMemberName] string memberName = "")
-    {
-        Log.Error("[{Method}] {Message}", memberName, message);
-    }
+        public static void LogWarning(string message,
+            [CallerMemberName] string memberName = "") =>
+            WriteLog("WARNING", message, memberName);
 
-    public static void Error(Exception ex, string message = "", [CallerMemberName] string memberName = "")
-    {
-        Log.Error(ex, "[{Method}] {Message}", memberName, message);
-    }
+        public static void LogError(string message, Exception ex = null,
+            [CallerMemberName] string memberName = "") =>
+            WriteLog("ERROR", $"{message} {(ex != null ? $"| Exception: {ex}" : "")}", memberName);
 
-    public static void Fatal(string message, [CallerMemberName] string memberName = "")
-    {
-        Log.Fatal("[{Method}] {Message}", memberName, message);
-    }
+        private static void WriteLog(string level, string message, string memberName)
+        {
+            var logLine = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] ({memberName}) {message}{Environment.NewLine}";
 
-    public static void Fatal(Exception ex, string message = "", [CallerMemberName] string memberName = "")
-    {
-        Log.Fatal(ex, "[{Method}] {Message}", memberName, message);
+            lock (_lock)
+            {
+                try
+                {
+                    File.AppendAllText(_logFilePath, logLine);
+                }
+                catch
+                {
+                    // Suppress logging errors
+                }
+            }
+        }
     }
 }
